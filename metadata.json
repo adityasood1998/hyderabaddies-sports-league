@@ -1,0 +1,6 @@
+{
+  "name": "FlatLeague — Household Sports & Match Ledger",
+  "description": "Official flatmate sports league tracker for head-to-head matches, ELO standings, multi-sport rivalries, tournament brackets, and household chore forfeits.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

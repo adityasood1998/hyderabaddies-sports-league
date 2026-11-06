@@ -1,0 +1,423 @@
+{
+  "entities": {
+    "League": {
+      "title": "League",
+      "description": "A household flatmate sports league and season container.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the flatmate who created and owns this league.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the flat league (e.g., Flat 4B Premier League).",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "flatCode": {
+          "type": "string",
+          "description": "Short apartment or flat code (e.g., FLAT-4B).",
+          "minLength": 2,
+          "maxLength": 24,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "seasonName": {
+          "type": "string",
+          "description": "Active season title (e.g., Autumn Championship 2026).",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "houseStake": {
+          "type": "string",
+          "description": "Season trophy and last-place penalty description.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "status": {
+          "type": "string",
+          "description": "Lifecycle status of the league season.",
+          "enum": ["active", "archived"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the league was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the league was last updated."
+        }
+      },
+      "required": [
+        "ownerId",
+        "name",
+        "flatCode",
+        "seasonName",
+        "houseStake",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "A flatmate competitor registered in a household league.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the league owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "leagueId": {
+          "type": "string",
+          "description": "ID of the parent league document.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the flatmate.",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "nickname": {
+          "type": "string",
+          "description": "Athletic moniker or house nickname.",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "roomLabel": {
+          "type": "string",
+          "description": "Bedroom or flat zone identifier (e.g., Box Room, En-Suite).",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "favoriteSport": {
+          "type": "string",
+          "description": "Primary specialty discipline.",
+          "enum": [
+            "table_tennis",
+            "foosball",
+            "darts",
+            "pool",
+            "video_game",
+            "board_game"
+          ]
+        },
+        "avatarColor": {
+          "type": "string",
+          "description": "Hex or token identifier for player crest color.",
+          "minLength": 3,
+          "maxLength": 24
+        },
+        "elo": {
+          "type": "number",
+          "description": "Current overall ELO rating (starts at 1200)."
+        },
+        "wins": {
+          "type": "number",
+          "description": "Total matches won."
+        },
+        "losses": {
+          "type": "number",
+          "description": "Total matches lost."
+        },
+        "draws": {
+          "type": "number",
+          "description": "Total matches drawn."
+        },
+        "streak": {
+          "type": "number",
+          "description": "Current win/loss streak (positive for win streak, negative for loss streak)."
+        },
+        "pointsFor": {
+          "type": "number",
+          "description": "Cumulative goals or points scored."
+        },
+        "pointsAgainst": {
+          "type": "number",
+          "description": "Cumulative goals or points conceded."
+        },
+        "championships": {
+          "type": "number",
+          "description": "Number of house cups won."
+        },
+        "status": {
+          "type": "string",
+          "description": "Player active status in the flat.",
+          "enum": ["active", "retired"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of registration."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last stat update."
+        }
+      },
+      "required": [
+        "ownerId",
+        "leagueId",
+        "name",
+        "nickname",
+        "roomLabel",
+        "favoriteSport",
+        "avatarColor",
+        "elo",
+        "wins",
+        "losses",
+        "draws",
+        "streak",
+        "pointsFor",
+        "pointsAgainst",
+        "championships",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "An official head-to-head match fixture or completed result between two flatmates.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the league owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "leagueId": {
+          "type": "string",
+          "description": "ID of the parent league.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sport": {
+          "type": "string",
+          "description": "Sport discipline played.",
+          "enum": [
+            "table_tennis",
+            "foosball",
+            "darts",
+            "pool",
+            "video_game",
+            "board_game"
+          ]
+        },
+        "playerOneId": {
+          "type": "string",
+          "description": "ID of Home / Player 1.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "playerOneName": {
+          "type": "string",
+          "description": "Snapshot name of Player 1.",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "playerTwoId": {
+          "type": "string",
+          "description": "ID of Away / Player 2.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "playerTwoName": {
+          "type": "string",
+          "description": "Snapshot name of Player 2.",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "scoreOne": {
+          "type": "number",
+          "description": "Score achieved by Player 1."
+        },
+        "scoreTwo": {
+          "type": "number",
+          "description": "Score achieved by Player 2."
+        },
+        "winnerId": {
+          "type": "string",
+          "description": "Player ID of the winner, or 'draw' / 'pending'.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "eloDelta": {
+          "type": "number",
+          "description": "ELO rating points exchanged in this match."
+        },
+        "stakeNote": {
+          "type": "string",
+          "description": "Match commentary, highlight note, or mini-stake (e.g., Loser makes tea).",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "isChampionshipMatch": {
+          "type": "boolean",
+          "description": "Whether this match was a title / cup decider."
+        },
+        "status": {
+          "type": "string",
+          "description": "Match state (scheduled or completed). Terminal once completed.",
+          "enum": ["scheduled", "completed"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when match was logged."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when match was updated."
+        }
+      },
+      "required": [
+        "ownerId",
+        "leagueId",
+        "sport",
+        "playerOneId",
+        "playerOneName",
+        "playerTwoId",
+        "playerTwoName",
+        "scoreOne",
+        "scoreTwo",
+        "winnerId",
+        "eloDelta",
+        "stakeNote",
+        "isChampionshipMatch",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Forfeit": {
+      "title": "Forfeit",
+      "description": "A household chore penalty or forfeit assigned from a match loss or bottom table finish.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "UID of the league owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "leagueId": {
+          "type": "string",
+          "description": "ID of the parent league.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "assignedToPlayerId": {
+          "type": "string",
+          "description": "Player ID of the flatmate who owes the forfeit.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "assignedToName": {
+          "type": "string",
+          "description": "Display name of the flatmate who owes the forfeit.",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "title": {
+          "type": "string",
+          "description": "Chore or forfeit task (e.g., Deep Clean Kitchen & Take Out Bins).",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "reason": {
+          "type": "string",
+          "description": "Match or standing reason (e.g., Lost 11-2 in Table Tennis Derby).",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "status": {
+          "type": "string",
+          "description": "Completion state. Terminal once completed.",
+          "enum": ["pending", "completed"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when forfeit was issued."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when forfeit was updated."
+        }
+      },
+      "required": [
+        "ownerId",
+        "leagueId",
+        "assignedToPlayerId",
+        "assignedToName",
+        "title",
+        "reason",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Trusted administrator marker document.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["admin"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["role", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/leagues/{leagueId}": {
+      "schema": { "$ref": "#/entities/League" },
+      "description": "Stores flatmate leagues owned by the authenticated user."
+    },
+    "/players/{playerId}": {
+      "schema": { "$ref": "#/entities/Player" },
+      "description": "Stores flatmate player rosters and live ELO/match statistics."
+    },
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/Match" },
+      "description": "Stores scheduled fixtures and completed match results."
+    },
+    "/forfeits/{forfeitId}": {
+      "schema": { "$ref": "#/entities/Forfeit" },
+      "description": "Stores household chore forfeits and stakes owed by flatmates."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Read-only system collection for verified administrators."
+    }
+  }
+}

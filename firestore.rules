@@ -1,0 +1,304 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default-Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'adityasood1998@gmail.com'
+      );
+    }
+
+    function isValidSport(sport) {
+      return sport is string && sport.size() <= 32 && (
+        sport == 'table_tennis' ||
+        sport == 'foosball' ||
+        sport == 'darts' ||
+        sport == 'pool' ||
+        sport == 'video_game' ||
+        sport == 'board_game'
+      );
+    }
+
+    function isLeagueOwner(leagueId) {
+      return exists(/databases/$(database)/documents/leagues/$(leagueId)) &&
+        get(/databases/$(database)/documents/leagues/$(leagueId)).data.ownerId == request.auth.uid;
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap)
+    function isValidLeague(data) {
+      return data.keys().hasAll([
+          'ownerId', 'name', 'flatCode', 'seasonName', 'houseStake', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'name', 'flatCode', 'seasonName', 'houseStake', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId == request.auth.uid &&
+        isValidId(data.ownerId) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+        data.flatCode is string && data.flatCode.size() >= 2 && data.flatCode.size() <= 24 && data.flatCode.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.seasonName is string && data.seasonName.size() >= 1 && data.seasonName.size() <= 80 &&
+        data.houseStake is string && data.houseStake.size() >= 1 && data.houseStake.size() <= 160 &&
+        data.status is string && data.status.size() <= 16 && (data.status == 'active' || data.status == 'archived') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPlayer(data) {
+      return data.keys().hasAll([
+          'ownerId', 'leagueId', 'name', 'nickname', 'roomLabel', 'favoriteSport', 'avatarColor',
+          'elo', 'wins', 'losses', 'draws', 'streak', 'pointsFor', 'pointsAgainst', 'championships',
+          'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'leagueId', 'name', 'nickname', 'roomLabel', 'favoriteSport', 'avatarColor',
+          'elo', 'wins', 'losses', 'draws', 'streak', 'pointsFor', 'pointsAgainst', 'championships',
+          'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId == request.auth.uid &&
+        isValidId(data.ownerId) &&
+        isValidId(data.leagueId) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 50 &&
+        data.nickname is string && data.nickname.size() >= 1 && data.nickname.size() <= 50 &&
+        data.roomLabel is string && data.roomLabel.size() >= 1 && data.roomLabel.size() <= 40 &&
+        isValidSport(data.favoriteSport) &&
+        data.avatarColor is string && data.avatarColor.size() >= 3 && data.avatarColor.size() <= 24 &&
+        data.elo is number && data.elo >= 100 && data.elo <= 5000 &&
+        data.wins is number && data.wins >= 0 && data.wins <= 10000 &&
+        data.losses is number && data.losses >= 0 && data.losses <= 10000 &&
+        data.draws is number && data.draws >= 0 && data.draws <= 10000 &&
+        data.streak is number && data.streak >= -1000 && data.streak <= 1000 &&
+        data.pointsFor is number && data.pointsFor >= 0 && data.pointsFor <= 1000000 &&
+        data.pointsAgainst is number && data.pointsAgainst >= 0 && data.pointsAgainst <= 1000000 &&
+        data.championships is number && data.championships >= 0 && data.championships <= 1000 &&
+        data.status is string && data.status.size() <= 16 && (data.status == 'active' || data.status == 'retired') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidMatch(data) {
+      return data.keys().hasAll([
+          'ownerId', 'leagueId', 'sport', 'playerOneId', 'playerOneName', 'playerTwoId', 'playerTwoName',
+          'scoreOne', 'scoreTwo', 'winnerId', 'eloDelta', 'stakeNote', 'isChampionshipMatch',
+          'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'leagueId', 'sport', 'playerOneId', 'playerOneName', 'playerTwoId', 'playerTwoName',
+          'scoreOne', 'scoreTwo', 'winnerId', 'eloDelta', 'stakeNote', 'isChampionshipMatch',
+          'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId == request.auth.uid &&
+        isValidId(data.ownerId) &&
+        isValidId(data.leagueId) &&
+        isValidSport(data.sport) &&
+        isValidId(data.playerOneId) &&
+        data.playerOneName is string && data.playerOneName.size() >= 1 && data.playerOneName.size() <= 50 &&
+        isValidId(data.playerTwoId) &&
+        data.playerTwoName is string && data.playerTwoName.size() >= 1 && data.playerTwoName.size() <= 50 &&
+        data.playerOneId != data.playerTwoId &&
+        data.scoreOne is number && data.scoreOne >= 0 && data.scoreOne <= 1000 &&
+        data.scoreTwo is number && data.scoreTwo >= 0 && data.scoreTwo <= 1000 &&
+        isValidId(data.winnerId) &&
+        (data.winnerId == data.playerOneId || data.winnerId == data.playerTwoId || data.winnerId == 'draw' || data.winnerId == 'pending') &&
+        data.eloDelta is number && data.eloDelta >= 0 && data.eloDelta <= 500 &&
+        data.stakeNote is string && data.stakeNote.size() >= 1 && data.stakeNote.size() <= 140 &&
+        data.isChampionshipMatch is bool &&
+        data.status is string && data.status.size() <= 16 && (data.status == 'scheduled' || data.status == 'completed') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidForfeit(data) {
+      return data.keys().hasAll([
+          'ownerId', 'leagueId', 'assignedToPlayerId', 'assignedToName', 'title', 'reason',
+          'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'leagueId', 'assignedToPlayerId', 'assignedToName', 'title', 'reason',
+          'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId == request.auth.uid &&
+        isValidId(data.ownerId) &&
+        isValidId(data.leagueId) &&
+        isValidId(data.assignedToPlayerId) &&
+        data.assignedToName is string && data.assignedToName.size() >= 1 && data.assignedToName.size() <= 50 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+        data.reason is string && data.reason.size() >= 1 && data.reason.size() <= 140 &&
+        data.status is string && data.status.size() <= 16 && (data.status == 'pending' || data.status == 'completed') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // 4. Collection Rules
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    match /leagues/{leagueId} {
+      allow get: if isSignedIn() && isValidId(leagueId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        isValidId(leagueId) &&
+        isValidLeague(incoming()) &&
+        incoming().status == 'active' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(leagueId) &&
+        isValidLeague(incoming()) && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'archived' &&
+            incoming().ownerId == existing().ownerId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time && (
+              // Action 1: Update Season Details
+              incoming().diff(existing()).affectedKeys().hasOnly(['name', 'flatCode', 'seasonName', 'houseStake', 'updatedAt']) ||
+              // Action 2: Archive Season (Terminal State Transition)
+              (incoming().status == 'archived' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+            )
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(leagueId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /players/{playerId} {
+      allow get: if isSignedIn() && isValidId(playerId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        isValidId(playerId) &&
+        isValidPlayer(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isLeagueOwner(incoming().leagueId);
+
+      allow update: if isSignedIn() &&
+        isValidId(playerId) &&
+        isValidPlayer(incoming()) && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'retired' &&
+            incoming().ownerId == existing().ownerId &&
+            incoming().leagueId == existing().leagueId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            isLeagueOwner(existing().leagueId) && (
+              // Action 1: Update Match Stats & ELO after a match or cup win
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'elo', 'wins', 'losses', 'draws', 'streak', 'pointsFor', 'pointsAgainst', 'championships', 'updatedAt'
+              ]) ||
+              // Action 2: Update Flatmate Profile Info
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'name', 'nickname', 'roomLabel', 'favoriteSport', 'avatarColor', 'updatedAt'
+              ]) ||
+              // Action 3: Retire Flatmate from Active Roster (Terminal State Transition)
+              (incoming().status == 'retired' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+            )
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(playerId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /matches/{matchId} {
+      allow get: if isSignedIn() && isValidId(matchId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        isValidId(matchId) &&
+        isValidMatch(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isLeagueOwner(incoming().leagueId) &&
+        exists(/databases/$(database)/documents/players/$(incoming().playerOneId)) &&
+        exists(/databases/$(database)/documents/players/$(incoming().playerTwoId));
+
+      allow update: if isSignedIn() &&
+        isValidId(matchId) &&
+        isValidMatch(incoming()) && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'completed' &&
+            incoming().ownerId == existing().ownerId &&
+            incoming().leagueId == existing().leagueId &&
+            incoming().playerOneId == existing().playerOneId &&
+            incoming().playerTwoId == existing().playerTwoId &&
+            incoming().sport == existing().sport &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            isLeagueOwner(existing().leagueId) && (
+              // Action 1: Record Final Match Result (Transitions scheduled -> completed)
+              (incoming().status == 'completed' &&
+                incoming().diff(existing()).affectedKeys().hasOnly([
+                  'scoreOne', 'scoreTwo', 'winnerId', 'eloDelta', 'stakeNote', 'status', 'updatedAt'
+                ]))
+            )
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(matchId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /forfeits/{forfeitId} {
+      allow get: if isSignedIn() && isValidId(forfeitId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        isValidId(forfeitId) &&
+        isValidForfeit(incoming()) &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        isLeagueOwner(incoming().leagueId) &&
+        exists(/databases/$(database)/documents/players/$(incoming().assignedToPlayerId));
+
+      allow update: if isSignedIn() &&
+        isValidId(forfeitId) &&
+        isValidForfeit(incoming()) && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            existing().status != 'completed' &&
+            incoming().ownerId == existing().ownerId &&
+            incoming().leagueId == existing().leagueId &&
+            incoming().assignedToPlayerId == existing().assignedToPlayerId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            isLeagueOwner(existing().leagueId) && (
+              // Action 1: Mark Chore Forfeit Completed (Terminal State Transition)
+              (incoming().status == 'completed' &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+            )
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(forfeitId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+  }
+}
